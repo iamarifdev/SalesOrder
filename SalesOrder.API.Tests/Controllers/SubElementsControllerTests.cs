@@ -10,7 +10,7 @@ using SalesOrder.Data;
 
 namespace SalesOrder.API.Tests.Controllers;
 
-public class SubElementsControllerTests : WebApplicationFactory<SubElementsController>
+public class SubElementsControllerTests : IDisposable
 {
     private WebApplicationFactory<SubElementsController> _factory;
     private ApplicationDbContext _context;
@@ -18,7 +18,7 @@ public class SubElementsControllerTests : WebApplicationFactory<SubElementsContr
     [SetUp]
     public async Task SetupAsync()
     {
-        _factory = new WebApplicationFactory<SubElementsController>().WithWebHostBuilder(_ => { });
+        _factory = CustomWebApplicationFactory<SubElementsController>.Create();
 
         // Initialize test data
         using var scope = _factory.Services.CreateScope();
@@ -60,7 +60,7 @@ public class SubElementsControllerTests : WebApplicationFactory<SubElementsContr
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<SubElementDto>>();
         result.Result.Id.Should().Be(subElementId);
     }
-    
+
     [Test]
     public async Task AddSubElement_WithValidData_ReturnsCreatedSubElement()
     {
@@ -85,7 +85,7 @@ public class SubElementsControllerTests : WebApplicationFactory<SubElementsContr
         result.Result.Should().NotBeNull();
         result.Result.Id.Should().BeGreaterThan(0);
     }
-    
+
     [Test]
     public async Task PutSubElement_WithValidData_ReturnsUpdatedSubElement()
     {
@@ -134,5 +134,11 @@ public class SubElementsControllerTests : WebApplicationFactory<SubElementsContr
 
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<SubElementDto>>();
         result.Result.Should().NotBeNull();
+    }
+
+    public void Dispose()
+    {
+        _factory?.Dispose();
+        _context?.Dispose();
     }
 }

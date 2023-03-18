@@ -10,7 +10,7 @@ using SalesOrder.Data;
 
 namespace SalesOrder.API.Tests.Controllers
 {
-    public class WindowsControllerTests : WebApplicationFactory<WindowsController>
+    public class WindowsControllerTests : IDisposable
     {
         private WebApplicationFactory<WindowsController> _factory;
         private ApplicationDbContext _context;
@@ -18,7 +18,7 @@ namespace SalesOrder.API.Tests.Controllers
         [SetUp]
         public async Task SetupAsync()
         {
-            _factory = new WebApplicationFactory<WindowsController>().WithWebHostBuilder(_ => { });
+            _factory = CustomWebApplicationFactory<WindowsController>.Create();
 
             // Initialize test data
             using var scope = _factory.Services.CreateScope();
@@ -82,7 +82,7 @@ namespace SalesOrder.API.Tests.Controllers
             result.Result.Should().NotBeNull();
             result.Result.Id.Should().BeGreaterThan(0);
         }
-        
+
         [Test]
         public async Task PutWindow_WithValidData_ReturnsUpdatedWindow()
         {
@@ -126,6 +126,12 @@ namespace SalesOrder.API.Tests.Controllers
 
             var result = await response.Content.ReadFromJsonAsync<ApiResponse<WindowDto>>();
             result.Result.Should().NotBeNull();
+        }
+
+        public void Dispose()
+        {
+            _factory?.Dispose();
+            _context?.Dispose();
         }
     }
 }

@@ -10,7 +10,7 @@ using SalesOrder.Data;
 
 namespace SalesOrder.API.Tests.Controllers
 {
-    public class OrdersControllerTests : WebApplicationFactory<OrdersController>
+    public class OrdersControllerTests : IDisposable
     {
         private WebApplicationFactory<OrdersController> _factory;
         private ApplicationDbContext _context;
@@ -18,8 +18,8 @@ namespace SalesOrder.API.Tests.Controllers
         [SetUp]
         public async Task SetupAsync()
         {
-            _factory = new WebApplicationFactory<OrdersController>().WithWebHostBuilder(_ => { });
-
+            _factory = CustomWebApplicationFactory<OrdersController>.Create();
+            
             // Initialize test data
             using var scope = _factory.Services.CreateScope();
             _context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -124,6 +124,12 @@ namespace SalesOrder.API.Tests.Controllers
 
             var result = await response.Content.ReadFromJsonAsync<ApiResponse<OrderDto>>();
             result.Result.Should().NotBeNull();
+        }
+
+        public void Dispose()
+        {
+            _factory?.Dispose();
+            _context?.Dispose();
         }
     }
 }

@@ -52,10 +52,10 @@ app.Run();
 
 void MigrateDatabase()
 {
-    using var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-    var dbContextOptions = serviceScope.ServiceProvider.GetService<DbContextOptions<ApplicationDbContext>>();
-    if (dbContextOptions == null || !dbContextOptions.IsRelational()) return;
+    Console.WriteLine($"-------------Environment: {app.Environment.EnvironmentName}");
+    if (app.Environment.IsEnvironment("Test")) return;
     
+    using var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
     using var context = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
     context.Database.Migrate();
 }
