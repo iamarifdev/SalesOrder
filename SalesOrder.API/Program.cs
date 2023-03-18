@@ -15,19 +15,15 @@ builder.Services.RegisterAutoMappingProfiles();
 builder.Services.RegisterDependencies();
 
 if (builder.Environment.IsEnvironment("Test"))
-{
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseInMemoryDatabase("TestDb"));
-}
 else
-{
     builder.Services.AddDbContext<ApplicationDbContext>(
         options => options.UseSqlite(
             builder.Configuration.GetConnectionString(nameof(ApplicationDbContext)),
             x => x.MigrationsAssembly("SalesOrder.Data")
         )
     );
-}
 
 var app = builder.Build();
 
@@ -53,7 +49,7 @@ app.Run();
 void MigrateDatabase()
 {
     if (app.Environment.IsEnvironment("Test")) return;
-    
+
     using var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
     using var context = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
     context.Database.Migrate();

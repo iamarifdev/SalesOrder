@@ -1,12 +1,12 @@
 @page "/orders"
+@using SalesOrder.Common.Helpers
+@using SalesOrder.Common.Models
 @using SalesOrder.App.Services
 @using SalesOrder.Common.DTO.Element
 @using SalesOrder.Common.DTO.Order
 @using SalesOrder.Common.DTO.Window
-@using SalesOrder.Common.Models
 @using SalesOrder.App.Pages.Windows
 @using SalesOrder.App.Pages.SubElements
-@using SalesOrder.Common.Helpers
 @inject IOrderService OrderService
 @inject IWindowService WindowService
 @inject ISubElementService SubElementService
@@ -22,7 +22,7 @@
     <RadzenButton Click="@OnClearSearch" Icon="clear" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text" MouseEnter="@(args => ShowTooltip(args, "Clear Search"))" Style="margin-left: -54px"/>
   }
   <RadzenButton Click="@OnSearch" Icon="search" ButtonStyle="ButtonStyle.Info" ButtonType="ButtonType.Button" MouseEnter="@(args => ShowTooltip(args, "Search"))" Style="margin-left: -10px"/>
-  <RadzenButton Click="@(_ => RefreshGrid())" Icon="refresh" ButtonStyle="ButtonStyle.Info" MouseEnter="@(args => ShowTooltip(args, "Refresh"))" />
+  <RadzenButton Click="@(_ => RefreshGrid())" Icon="refresh" ButtonStyle="ButtonStyle.Info" MouseEnter="@(args => ShowTooltip(args, "Refresh"))"/>
   <RadzenButton Click="@(_ => OnAddNewOrder())" Text="Add New" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary"/>
 </RadzenStack>
 <RadzenDataGrid @ref="@_dataGrid" IsLoading="@_isLoading" Data="@_orders" Count="@_count"

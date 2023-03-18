@@ -1,12 +1,8 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace SalesOrder.API.Tests;
 
-using Microsoft.AspNetCore.Mvc.Testing;
-
-public static class CustomWebApplicationFactory<T> where T: class
+public static class CustomWebApplicationFactory<T> where T : class
 {
     public static WebApplicationFactory<T> Create()
     {

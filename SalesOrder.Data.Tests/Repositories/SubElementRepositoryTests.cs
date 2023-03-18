@@ -7,15 +7,11 @@ namespace SalesOrder.Data.Tests.Repositories;
 [TestFixture]
 public class SubElementRepositoryTests
 {
-    private ApplicationDbContext _dbContext;
-    private ISubElementRepository _subElementRepository;
-    private IWindowRepository _windowRepository;
-
     [SetUp]
     public async Task SetUpAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .UseInMemoryDatabase("TestDatabase")
             .Options;
 
         _dbContext = new ApplicationDbContext(options);
@@ -31,6 +27,10 @@ public class SubElementRepositoryTests
         await _dbContext.Database.EnsureDeletedAsync();
         await _dbContext.DisposeAsync();
     }
+
+    private ApplicationDbContext _dbContext;
+    private ISubElementRepository _subElementRepository;
+    private IWindowRepository _windowRepository;
 
     [Test]
     public async Task GetSubElements_ReturnsAllSubElements_WhenNoFiltersAreApplied()

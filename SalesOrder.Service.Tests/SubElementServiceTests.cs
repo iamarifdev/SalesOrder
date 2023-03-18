@@ -12,10 +12,6 @@ namespace SalesOrder.Service.Tests;
 [TestFixture]
 public class SubElementServiceTests
 {
-    private ISubElementService _subElementService;
-    private Mock<IMapper> _mapperMock;
-    private Mock<ISubElementRepository> _subElementRepositoryMock;
-
     [SetUp]
     public void Setup()
     {
@@ -23,6 +19,10 @@ public class SubElementServiceTests
         _subElementRepositoryMock = new Mock<ISubElementRepository>();
         _subElementService = new SubElementService(_mapperMock.Object, _subElementRepositoryMock.Object);
     }
+
+    private ISubElementService _subElementService;
+    private Mock<IMapper> _mapperMock;
+    private Mock<ISubElementRepository> _subElementRepositoryMock;
 
     [Test]
     public async Task GetSubElements_ShouldReturnPaginatedList()

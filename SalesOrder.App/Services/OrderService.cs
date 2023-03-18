@@ -14,11 +14,11 @@ public interface IOrderService
 
 public class OrderService : BaseService<OrderDto, OrderCreateDto, OrderUpdateDto>, IOrderService
 {
-    protected override string EndpointUrl => "Orders";
-
     public OrderService(HttpClient httpClient) : base(httpClient)
     {
     }
+
+    protected override string EndpointUrl => "Orders";
 
     public async Task<PaginatedList<OrderDto>> GetAllOrdersAsync(PaginationQuery paginationQuery)
     {

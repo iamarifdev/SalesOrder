@@ -7,12 +7,13 @@ namespace SalesOrder.App.Services;
 public abstract class BaseService<TDto, TCreateDto, TUpdateDto>
 {
     private readonly HttpClient _httpClient;
-    protected abstract string EndpointUrl { get; }
 
     protected BaseService(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
+
+    protected abstract string EndpointUrl { get; }
 
     protected async Task<PaginatedList<TDto>> GetAllAsync(PaginationQuery paginationQuery)
     {

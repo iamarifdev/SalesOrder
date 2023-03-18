@@ -27,7 +27,7 @@ public static class Extensions
 
         return services;
     }
-    
+
     public static bool IsRelational(this DbContextOptions options)
     {
         return options.FindExtension<RelationalOptionsExtension>() != null;

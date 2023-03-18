@@ -8,7 +8,6 @@ public static class TestDataHelper
     {
         var subElements = new List<SubElement>();
         for (var i = 1; i <= 10; i++)
-        {
             subElements.Add(new SubElement
             {
                 Id = i,
@@ -19,7 +18,6 @@ public static class TestDataHelper
                 OrderId = i,
                 WindowId = i
             });
-        }
         return subElements;
     }
 }

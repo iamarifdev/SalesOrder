@@ -66,7 +66,7 @@ public class WindowRepository : IWindowRepository
         _context.Entry(window).State = EntityState.Modified;
         await _context.SaveChangesAsync();
     }
-    
+
     public async Task UpdateTotalSubElementCount(int windowId)
     {
         var subElementCount = await _context.SubElements.CountAsync(w => w.WindowId == windowId);

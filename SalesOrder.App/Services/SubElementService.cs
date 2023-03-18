@@ -12,13 +12,14 @@ public interface ISubElementService
     Task<SubElementDto> DeleteSubElementAsync(int subElementId);
 }
 
-public class SubElementService : BaseService<SubElementDto, SubElementCreateDto, SubElementUpdateDto>, ISubElementService
+public class SubElementService : BaseService<SubElementDto, SubElementCreateDto, SubElementUpdateDto>,
+    ISubElementService
 {
-    protected override string EndpointUrl => "SubElements";
-
     public SubElementService(HttpClient httpClient) : base(httpClient)
     {
     }
+
+    protected override string EndpointUrl => "SubElements";
 
     public async Task<PaginatedList<SubElementDto>> GetAllSubElementsAsync(PaginationQuery paginationQuery)
     {

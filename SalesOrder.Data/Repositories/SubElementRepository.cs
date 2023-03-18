@@ -64,7 +64,7 @@ public class SubElementRepository : ISubElementRepository
     {
         _context.SubElements.Add(subElement);
         await _context.SaveChangesAsync();
-        
+
         await _windowRepository.UpdateTotalSubElementCount(subElement.WindowId);
     }
 
@@ -81,7 +81,7 @@ public class SubElementRepository : ISubElementRepository
         if (subElement == null) throw new SubElementNotFoundException();
         _context.SubElements.Remove(subElement);
         await _context.SaveChangesAsync();
-        
+
         await _windowRepository.UpdateTotalSubElementCount(subElement.WindowId);
     }
 }

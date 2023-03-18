@@ -12,10 +12,6 @@ namespace SalesOrder.Service.Tests;
 [TestFixture]
 public class WindowServiceTests
 {
-    private IWindowService _windowService;
-    private Mock<IMapper> _mapperMock;
-    private Mock<IWindowRepository> _windowRepositoryMock;
-
     [SetUp]
     public void Setup()
     {
@@ -23,6 +19,10 @@ public class WindowServiceTests
         _windowRepositoryMock = new Mock<IWindowRepository>();
         _windowService = new WindowService(_mapperMock.Object, _windowRepositoryMock.Object);
     }
+
+    private IWindowService _windowService;
+    private Mock<IMapper> _mapperMock;
+    private Mock<IWindowRepository> _windowRepositoryMock;
 
     [Test]
     public async Task GetWindows_ShouldReturnPaginatedList()
@@ -155,7 +155,7 @@ public class WindowServiceTests
         result.QuantityOfWindows.Should().Be(10);
         result.TotalSubElements.Should().Be(0);
     }
-    
+
     [Test]
     public async Task DeleteWindow_ExistingWindow_ShouldReturnDeletedWindowDto()
     {

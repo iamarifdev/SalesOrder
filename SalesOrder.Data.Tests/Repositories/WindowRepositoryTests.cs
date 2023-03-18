@@ -1,22 +1,19 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using SalesOrder.Common.Models;
 using SalesOrder.Data.Models;
 using SalesOrder.Data.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace SalesOrder.Data.Tests.Repositories;
 
 [TestFixture]
 public class WindowRepositoryTests
 {
-    private ApplicationDbContext _context;
-    private IWindowRepository _windowRepository;
-
     [SetUp]
     public async Task SetUpAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .UseInMemoryDatabase("TestDatabase")
             .Options;
 
         _context = new ApplicationDbContext(options);
@@ -24,13 +21,16 @@ public class WindowRepositoryTests
 
         _windowRepository = new WindowRepository(_context);
     }
-    
+
     [TearDown]
     public async Task CleanupAsync()
     {
         await _context.Database.EnsureDeletedAsync();
         await _context.DisposeAsync();
     }
+
+    private ApplicationDbContext _context;
+    private IWindowRepository _windowRepository;
 
     [Test]
     public async Task GetWindows_WithNoSearchParams_ReturnsAllWindows()
@@ -221,21 +221,21 @@ public class WindowRepositoryTests
     public async Task UpdateTotalSubElementCount_WithValidWindowId_UpdatesTotalSubElementCountInWindow()
     {
         // Arrange
-        var order = new Order { Id = 999, Name = "New Order", State = "Test State"};
+        var order = new Order { Id = 999, Name = "New Order", State = "Test State" };
         var window = new Window { Id = 999, Name = "New Window" };
         var subElements = new List<SubElement>
         {
-            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500},
-            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500},
-            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500},
-            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500},
-            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500}
+            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500 },
+            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500 },
+            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500 },
+            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500 },
+            new() { Type = "Doors", WindowId = window.Id, OrderId = order.Id, Element = 1, Width = 1100, Height = 500 }
         };
-        
+
         // Act
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
-        
+
         await _windowRepository.AddWindow(window);
         _context.SubElements.AddRange(subElements);
         await _context.SaveChangesAsync();

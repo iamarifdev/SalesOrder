@@ -14,11 +14,11 @@ public interface IWindowService
 
 public class WindowService : BaseService<WindowDto, WindowCreateDto, WindowUpdateDto>, IWindowService
 {
-    protected override string EndpointUrl => "Windows";
-
     public WindowService(HttpClient httpClient) : base(httpClient)
     {
     }
+
+    protected override string EndpointUrl => "Windows";
 
     public async Task<PaginatedList<WindowDto>> GetAllWindowsAsync(PaginationQuery paginationQuery)
     {

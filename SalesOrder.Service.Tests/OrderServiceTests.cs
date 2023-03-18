@@ -2,20 +2,16 @@ using AutoMapper;
 using FluentAssertions;
 using Moq;
 using SalesOrder.Common.DTO.Order;
+using SalesOrder.Common.Exceptions;
 using SalesOrder.Common.Models;
 using SalesOrder.Data.Models;
 using SalesOrder.Data.Repositories;
-using SalesOrder.Common.Exceptions;
 
 namespace SalesOrder.Service.Tests;
 
 [TestFixture]
 public class OrderServiceTests
 {
-    private IOrderService _orderService;
-    private Mock<IMapper> _mapperMock;
-    private Mock<IOrderRepository> _orderRepositoryMock;
-
     [SetUp]
     public void Setup()
     {
@@ -23,6 +19,10 @@ public class OrderServiceTests
         _orderRepositoryMock = new Mock<IOrderRepository>();
         _orderService = new OrderService(_mapperMock.Object, _orderRepositoryMock.Object);
     }
+
+    private IOrderService _orderService;
+    private Mock<IMapper> _mapperMock;
+    private Mock<IOrderRepository> _orderRepositoryMock;
 
     [Test]
     public async Task GetOrders_ShouldReturnPaginatedList()

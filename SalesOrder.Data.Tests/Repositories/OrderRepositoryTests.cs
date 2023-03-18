@@ -1,33 +1,30 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using SalesOrder.Common.Models;
-using SalesOrder.Data.Repositories;
 using SalesOrder.Data.Models;
+using SalesOrder.Data.Repositories;
 
 namespace SalesOrder.Data.Tests.Repositories;
 
 [TestFixture]
 public class OrderRepositoryTests
 {
-    private ApplicationDbContext _context;
-    private IOrderRepository _repository;
-
     [SetUp]
     public async Task SetUpAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .UseInMemoryDatabase("TestDatabase")
             .Options;
 
         _context = new ApplicationDbContext(options);
         await _context.Database.EnsureCreatedAsync();
-        
+
         _repository = new OrderRepository(_context);
-        
+
         // Seed the database with test data
         var orders = new List<Order>
         {
-            new() { Name = "Test 1", State = "State1" },
+            new() { Name = "Test 1", State = "State1" }
         };
         await _context.AddRangeAsync(orders);
         await _context.SaveChangesAsync();
@@ -39,6 +36,9 @@ public class OrderRepositoryTests
         await _context.Database.EnsureDeletedAsync();
         await _context.DisposeAsync();
     }
+
+    private ApplicationDbContext _context;
+    private IOrderRepository _repository;
 
     [Test]
     public async Task GetOrders_ShouldReturnPaginatedList()
@@ -65,7 +65,7 @@ public class OrderRepositoryTests
         result.Count.Should().Be(2);
         result.Items.Should().Contain(order1).And.Contain(order3);
     }
-    
+
     [Test]
     public async Task GetOrders_WithSearchTerm_ReturnsFilteredOrders()
     {
@@ -123,7 +123,7 @@ public class OrderRepositoryTests
     {
         // Arrange
         var invalidOrderId = 999;
-    
+
         // Act and Assert
         var result = await _repository.GetOrder(invalidOrderId);
         result.Should().BeNull();
@@ -180,7 +180,7 @@ public class OrderRepositoryTests
         updatedOrder.State.Should().Be(order.State);
         updatedOrder.UpdatedAt.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(1));
     }
-    
+
     [Test]
     public async Task DeleteOrder_WithValidOrderId_RemovesOrderFromDatabase()
     {

@@ -12,8 +12,14 @@ namespace SalesOrder.API.Tests.Controllers;
 
 public class SubElementsControllerTests : IDisposable
 {
-    private WebApplicationFactory<SubElementsController> _factory;
     private ApplicationDbContext _context;
+    private WebApplicationFactory<SubElementsController> _factory;
+
+    public void Dispose()
+    {
+        _factory?.Dispose();
+        _context?.Dispose();
+    }
 
     [SetUp]
     public async Task SetupAsync()
@@ -73,7 +79,7 @@ public class SubElementsControllerTests : IDisposable
             Element = 1,
             Type = "Test Type",
             Width = 100,
-            Height = 100,
+            Height = 100
         };
 
         // Act
@@ -134,11 +140,5 @@ public class SubElementsControllerTests : IDisposable
 
         var result = await response.Content.ReadFromJsonAsync<ApiResponse<SubElementDto>>();
         result.Result.Should().NotBeNull();
-    }
-
-    public void Dispose()
-    {
-        _factory?.Dispose();
-        _context?.Dispose();
     }
 }
