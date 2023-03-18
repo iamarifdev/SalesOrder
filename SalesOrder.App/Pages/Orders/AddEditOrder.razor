@@ -1,0 +1,79 @@
+@page "/orders/new"
+@page "/orders/{orderId}/edit"
+@using SalesOrder.Common.Helpers
+@using SalesOrder.App.Services
+@using SalesOrder.Common.DTO.Order
+@inject DialogService DialogService
+@inject IOrderService OrderService
+
+<div class="container-fluid">
+  <RadzenFieldset class="rz-my-5" Text="@(OrderId.IsNotEmpty() ? "Edit Order" : "Add Order")">
+    <RadzenTemplateForm @ref="@_orderForm" TItem="OrderCreateDto" Data="@_model" Submit="@OnSubmit">
+      <div class="row">
+        <div class="col-md-4">
+          <RadzenLabel Text="Name"/>
+          <RadzenTextBox Name="Name" @bind-Value="@_model.Name" Placeholder="Name" style="display: block;" class="w-100"/>
+          <RadzenRequiredValidator Component="Name" Text="Name is required" Style="position: absolute"/>
+        </div>
+        <div class="col-md-4">
+          <RadzenLabel Text="State"/>
+          <RadzenTextBox Name="State" @bind-Value="@_model.State" Placeholder="State" style="display: block;" class="w-100"/>
+          <RadzenRequiredValidator Component="State" Text="State is required" Style="position: absolute"/>
+        </div>
+      </div>
+
+      <RadzenStack class="rz-my-5 rz-ml-3" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="1rem" Wrap="FlexWrap.Wrap">
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" @onclick:stopPropagation="true"/>
+      </RadzenStack>
+    </RadzenTemplateForm>
+  </RadzenFieldset>
+</div>
+
+@code {
+  private RadzenTemplateForm<OrderCreateDto> _orderForm;
+  private OrderCreateDto _model = new();
+
+  [Parameter]
+  public string OrderId { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+
+    if (OrderId.IsNotEmpty())
+    {
+      var orderId = int.Parse(OrderId);
+      var order = await OrderService.GetOrderByIdAsync(orderId);
+      _model = new OrderCreateDto
+      {
+        Name = order.Name,
+        State = order.State
+      };
+    }
+  }
+
+  private async Task OnSubmit()
+  {
+    if (_orderForm.IsValid)
+    {
+      if (OrderId.IsNotEmpty())
+      {
+        var orderId = int.Parse(OrderId);
+        await OrderService.UpdateOrderAsync(orderId, new OrderUpdateDto
+        {
+          Name = _model.Name,
+          State = _model.State,
+          Id = orderId
+        });
+      }
+      else
+      {
+        await OrderService.AddOrderAsync(_model);
+      }
+
+      _model = new OrderCreateDto();
+      DialogService.Close(true);
+    }
+  }
+
+}

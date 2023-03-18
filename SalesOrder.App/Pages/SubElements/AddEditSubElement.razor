@@ -1,0 +1,231 @@
+@page "/orders/{orderId}/windows/{windowId}/sub-elements/{subElementId?}"
+@using SalesOrder.Common.Helpers
+@using SalesOrder.Common.Models
+@using SalesOrder.App.Services
+@using SalesOrder.Common.DTO.Element
+@inject ISubElementService SubElementService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+
+@namespace SalesOrder.App.Pages.SubElements
+
+<div class="container-fluid">
+  <RadzenFieldset class="rz-my-5" Text="@(SubElementId.IsNotEmpty() ? "Update sub-element" : "Add new sub-element")">
+    <RadzenTemplateForm @ref="@_subElementForm" TItem="SubElementCreateDto" Data="@_subElementModel" Submit="@OnSubmit">
+      <div class="row">
+        <div class="col-md-4">
+          <RadzenLabel Text="Element"/>
+          <RadzenNumeric @bind-Value="@_subElementModel.Element" TValue="int" Name="Element" Placeholder="Element" style="display: block;" class="w-100"/>
+          <RadzenNumericRangeValidator Component="Element" Min="1" Text="Element should be greater than 0" Style="position: absolute"/>
+        </div>
+        <div class="col-md-4">
+          <RadzenLabel Text="Type"/>
+          <RadzenDropDown @bind-Value="@_subElementModel.Type" Data="@_types" Name="Type" Placeholder="Type" style="display: block;" class="w-100"/>
+          <RadzenRequiredValidator Component="Type" Text="Type is required" Style="position: absolute"/>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <RadzenLabel Text="Width"/>
+          <RadzenNumeric @bind-Value="@_subElementModel.Width" TValue="double" Name="Width" Placeholder="Width" style="display: block;" class="w-100"/>
+          <RadzenNumericRangeValidator Component="Width" Min="1" Text="Width should be greater than 0" Style="position: absolute"/>
+        </div>
+        <div class="col-md-4">
+          <RadzenLabel Text="Height"/>
+          <RadzenNumeric @bind-Value="@_subElementModel.Height" TValue="double" Name="Height" Placeholder="Height" style="display: block;" class="w-100"/>
+          <RadzenNumericRangeValidator Component="Height" Min="1" Text="Height should be greater than 0" Style="position: absolute"/>
+        </div>
+      </div>
+
+      <RadzenStack class="rz-my-5 rz-ml-3" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="1rem" Wrap="FlexWrap.Wrap">
+        <RadzenButton Text="Save" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" @onclick:stopPropagation="true"/>
+      </RadzenStack>
+
+    </RadzenTemplateForm>
+  </RadzenFieldset>
+
+  <RadzenDataGrid @ref="@_subElementDataGrid" IsLoading="@_isLoading" Data="@_subElements" Count="@_count"
+                  LoadData="@LoadData" TItem="SubElementDto" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Center"
+                  AllowSorting="true" PageSizeOptions="@_pageSizeOptions" ShowPagingSummary="@_showPagerSummary"
+                  PagingSummaryFormat="@_pagingSummaryFormat">
+    <Columns>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="Element" Title="Element"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="Type" Title="Type"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="Width" Title="Width"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="Height" Title="Height"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="CreatedAt" Title="Created At" MinWidth="250px"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Property="UpdatedAt" Title="Updated At" MinWidth="250px"/>
+      <RadzenDataGridColumn TItem="SubElementDto" Title="Action" Filterable="false" Sortable="false">
+        <Template Context="subElement">
+          <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="edit" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(_ => OnEditSubElement(subElement))" MouseEnter="@(args => ShowTooltip(args, "Edit"))"/>
+          <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(_ => OnDeleteSubElement(subElement))" MouseEnter="@(args => ShowTooltip(args, "Delete"))"/>
+        </Template>
+      </RadzenDataGridColumn>
+    </Columns>
+  </RadzenDataGrid>
+</div>
+
+@code {
+  private readonly string _pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+  private readonly bool _showPagerSummary = true;
+  private RadzenTemplateForm<SubElementCreateDto> _subElementForm;
+  private RadzenDataGrid<SubElementDto> _subElementDataGrid;
+  private IEnumerable<SubElementDto> _subElements = new List<SubElementDto>();
+  private SubElementCreateDto _subElementModel = new() { Type = "Doors" };
+  private readonly IEnumerable<int> _pageSizeOptions = new[] { 10, 20, 30 };
+  private bool _isLoading;
+  private int _count;
+  private readonly ConfirmOptions _confirmOptions = new() { OkButtonText = "Yes", CancelButtonText = "No" };
+  private readonly List<string> _types = new() { "Doors", "Window" };
+
+  [Parameter]
+  public string OrderId { get; set; }
+
+  [Parameter]
+  public string WindowId { get; set; }
+
+  [Parameter]
+  public string SubElementId { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+
+    var result = await SubElementService.GetAllSubElementsAsync(new SubElementPaginationQuery { WindowId = int.Parse(WindowId) });
+    if (result != null)
+    {
+      _subElements = result.Items;
+      _count = result.Count;
+    }
+
+    if (SubElementId.IsNotEmpty())
+    {
+      var subElement = _subElements.FirstOrDefault(x => x.Id == int.Parse(SubElementId));
+      if (subElement.IsNotEmpty())
+      {
+        _subElementModel = new SubElementCreateDto
+        {
+          Type = subElement!.Type,
+          Width = subElement.Width,
+          Height = subElement.Height,
+          Element = subElement.Element
+        };
+      }
+    }
+  }
+
+  private async Task OnSubmit()
+  {
+    if (_subElementForm.IsValid)
+    {
+      var windowId = int.Parse(WindowId);
+      var orderId = int.Parse(OrderId);
+
+      if (SubElementId.IsNotEmpty())
+      {
+        var subElementId = int.Parse(SubElementId);
+        var subElement = new SubElementUpdateDto
+        {
+          Id = subElementId,
+          OrderId = orderId,
+          WindowId = windowId,
+          Type = _subElementModel.Type,
+          Width = _subElementModel.Width,
+          Height = _subElementModel.Height,
+          Element = _subElementModel.Element
+        };
+
+        await SubElementService.UpdateSubElementAsync(subElementId, subElement);
+        SubElementId = string.Empty;
+
+        DialogService.Close(true);
+      }
+      else
+      {
+        var subElement = new SubElementCreateDto
+        {
+          OrderId = int.Parse(OrderId),
+          WindowId = int.Parse(WindowId),
+          Type = _subElementModel.Type,
+          Width = _subElementModel.Width,
+          Height = _subElementModel.Height,
+          Element = _subElementModel.Element
+        };
+
+        await SubElementService.AddSubElementAsync(subElement);
+      }
+
+      _subElementModel = new SubElementCreateDto { Type = "Doors" };
+
+      await RefreshWindowGrid();
+    }
+  }
+
+  private async Task RefreshWindowGrid()
+  {
+    _subElementDataGrid.Reset();
+    await _subElementDataGrid.FirstPage(true);
+  }
+
+
+  private async Task LoadData(LoadDataArgs args)
+  {
+    _isLoading = true;
+
+    var sort = args.Sorts.LastOrDefault();
+
+    var query = new SubElementPaginationQuery
+    {
+      Page = args.Skip != null && args.Top != null ? (int)args.Skip / (int)args.Top + 1 : 1,
+      PageSize = args.Top ?? 10,
+      SortField = sort?.Property ?? "CreatedAt",
+      SortOrder = sort?.SortOrder == SortOrder.Ascending ? "asc" : "desc",
+      WindowId = int.Parse(WindowId)
+    };
+
+    var result = await SubElementService.GetAllSubElementsAsync(query);
+
+    _subElements = result.Items;
+    _count = result.Count;
+
+    _isLoading = false;
+  }
+
+  private void OnEditSubElement(SubElementDto subElement)
+  {
+    SubElementId = subElement.Id.ToString();
+    _subElementModel = new SubElementCreateDto
+    {
+      Type = subElement.Type,
+      Width = subElement.Width,
+      Height = subElement.Height,
+      Element = subElement.Element
+    };
+  }
+
+  private void ResetForm()
+  {
+    SubElementId = string.Empty;
+    _subElementModel = new SubElementCreateDto { Type = "Doors" };
+  }
+
+  private async Task OnDeleteSubElement(SubElementDto subElement)
+  {
+    const string dialogMessage = "Are you sure you want to delete the sub-element?";
+    const string dialogTitle = "Delete Sub-element Confirmation";
+
+    var isConfirmed = await DialogService.Confirm(dialogMessage, dialogTitle, _confirmOptions);
+    if (isConfirmed == true)
+    {
+      await SubElementService.DeleteSubElementAsync(subElement.Id);
+      await RefreshWindowGrid();
+      ResetForm();
+    }
+  }
+
+  void ShowTooltip(ElementReference elementReference, string content)
+  {
+    TooltipService.Open(elementReference, content, new TooltipOptions { Position = TooltipPosition.Top });
+  }
+
+}

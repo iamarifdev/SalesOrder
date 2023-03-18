@@ -1,0 +1,210 @@
+@page "/orders/{orderId}/windows/{windowId?}"
+@using SalesOrder.Common.Helpers
+@using SalesOrder.Common.Models
+@using SalesOrder.App.Services
+@using SalesOrder.Common.DTO.Window
+@using SalesOrder.App.Pages.SubElements
+@inject TooltipService TooltipService
+@inject DialogService DialogService
+@inject IWindowService WindowService
+@namespace SalesOrder.App.Pages.Windows
+
+<div class="container-fluid">
+  <RadzenFieldset class="rz-my-5" Text="@(WindowId.IsNotEmpty() ? "Update window" : "Add new window")">
+    <RadzenTemplateForm @ref="@_windowForm" TItem="WindowCreateDto" Data="@_windowModel" Submit="@OnSubmit">
+      <div class="row">
+        <div class="col-md-4">
+          <RadzenLabel Text="Name"/>
+          <RadzenTextBox @bind-Value="@_windowModel.Name" Name="Name" Placeholder="Window Name" style="display: block;" class="w-100"/>
+          <RadzenRequiredValidator Component="Name" Text="Window name is required" Style="position: absolute"/>
+        </div>
+        <div class="col-md-4">
+          <RadzenLabel Text="Quantity"/>
+          <RadzenNumeric @bind-Value="@_windowModel.QuantityOfWindows" TValue="int" Name="QuantityOfWindows" Placeholder="Quantity" style="display: block;" class="w-100"/>
+          <RadzenNumericRangeValidator Component="QuantityOfWindows" Min="1" Text="Quantity should be greater than 0" Style="position: absolute"/>
+        </div>
+      </div>
+
+      <RadzenStack class="rz-my-5 rz-ml-3" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Start" Gap="1rem" Wrap="FlexWrap.Wrap">
+        <RadzenButton Text="Save" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" @onclick:stopPropagation="true"/>
+      </RadzenStack>
+
+    </RadzenTemplateForm>
+  </RadzenFieldset>
+
+  <RadzenDataGrid @ref="@_windowDataGrid" IsLoading="@_isLoading" Data="@_windows" Count="@_count"
+                  LoadData="@LoadData" TItem="WindowDto" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Center"
+                  AllowSorting="true" PageSizeOptions="@_pageSizeOptions" ShowPagingSummary="@_showPagerSummary"
+                  PagingSummaryFormat="@_pagingSummaryFormat">
+    <Columns>
+      <RadzenDataGridColumn TItem="WindowDto" Property="Name" Title="Name"/>
+      <RadzenDataGridColumn TItem="WindowDto" Property="QuantityOfWindows" Title="Quantity"/>
+      <RadzenDataGridColumn TItem="WindowDto" Property="TotalSubElements" Title="Total Sub-elements"/>
+      <RadzenDataGridColumn TItem="WindowDto" Property="CreatedAt" Title="Created At"/>
+      <RadzenDataGridColumn TItem="WindowDto" Property="UpdatedAt" Title="Updated At"/>
+      <RadzenDataGridColumn TItem="WindowDto" Title="Action" Filterable="false" Sortable="false">
+        <Template Context="window">
+          <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="add_circle_outline" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(_ => OnAddNewSubElement(window))" MouseEnter="@(args => ShowTooltip(args, "Add Sub Element"))"/>
+          <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="edit" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(_ => OnEditWindow(window))" MouseEnter="@(args => ShowTooltip(args, "Edit"))"/>
+          <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(_ => OnDeleteWindow(window))" MouseEnter="@(args => ShowTooltip(args, "Delete"))"/>
+        </Template>
+      </RadzenDataGridColumn>
+    </Columns>
+  </RadzenDataGrid>
+</div>
+
+@code {
+  private readonly string _pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+  private readonly bool _showPagerSummary = true;
+  private RadzenTemplateForm<WindowCreateDto> _windowForm;
+  private RadzenDataGrid<WindowDto> _windowDataGrid;
+  private IEnumerable<WindowDto> _windows = new List<WindowDto>();
+  private WindowCreateDto _windowModel = new();
+  private readonly IEnumerable<int> _pageSizeOptions = new[] { 10, 20, 30 };
+  private bool _isLoading;
+  private int _count;
+
+  private readonly DialogOptions _dialogOptions = new() { Width = "1000px", Height = "700px", Resizable = true, Draggable = true };
+
+  [Parameter]
+  public string OrderId { get; set; }
+
+  [Parameter]
+  public string WindowId { get; set; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+
+    var result = await WindowService.GetAllWindowsAsync(new WindowPaginationQuery { OrderId = int.Parse(OrderId) });
+    if (result != null)
+    {
+      _windows = result.Items;
+      _count = result.Count;
+    }
+
+    if (WindowId.IsNotEmpty())
+    {
+      var window = _windows.FirstOrDefault(x => x.Id == int.Parse(WindowId));
+      if (window.IsNotEmpty())
+      {
+        _windowModel = new WindowCreateDto
+        {
+          Name = window!.Name,
+          QuantityOfWindows = window.QuantityOfWindows
+        };
+      }
+    }
+  }
+
+  private async Task OnSubmit()
+  {
+    if (_windowForm.IsValid)
+    {
+      if (WindowId.IsNotEmpty())
+      {
+        var windowId = int.Parse(WindowId);
+        var window = new WindowUpdateDto
+        {
+          Id = windowId,
+          OrderId = int.Parse(OrderId),
+          Name = _windowModel.Name,
+          QuantityOfWindows = _windowModel.QuantityOfWindows
+        };
+
+        await WindowService.UpdateWindowAsync(windowId, window);
+        WindowId = string.Empty;
+
+        DialogService.Close(true);
+      }
+      else
+      {
+        var window = new WindowCreateDto
+        {
+          OrderId = int.Parse(OrderId),
+          Name = _windowModel.Name,
+          QuantityOfWindows = _windowModel.QuantityOfWindows
+        };
+
+        await WindowService.AddWindowAsync(window);
+      }
+
+      _windowModel = new WindowCreateDto();
+
+      await RefreshWindowGrid();
+    }
+  }
+
+  private async Task RefreshWindowGrid()
+  {
+    _windowDataGrid.Reset();
+    await _windowDataGrid.FirstPage(true);
+  }
+
+  private async Task LoadData(LoadDataArgs args)
+  {
+    _isLoading = true;
+
+    var sort = args.Sorts.LastOrDefault();
+
+    var query = new WindowPaginationQuery
+    {
+      Page = args.Skip != null && args.Top != null ? (int)args.Skip / (int)args.Top + 1 : 1,
+      PageSize = args.Top ?? 10,
+      SortField = sort?.Property ?? "CreatedAt",
+      SortOrder = sort?.SortOrder == SortOrder.Ascending ? "asc" : "desc",
+      OrderId = int.Parse(OrderId)
+    };
+
+    var result = await WindowService.GetAllWindowsAsync(query);
+
+    _windows = result.Items;
+    _count = result.Count;
+
+    _isLoading = false;
+  }
+
+  private async Task OnAddNewSubElement(WindowDto window)
+  {
+    var dialogTitle = $"Window name: {window.Name}";
+    var parameters = new Dictionary<string, object> { { "OrderID", OrderId }, { "WindowID", window.Id.ToString() } };
+    await DialogService.OpenAsync<AddEditSubElement>(dialogTitle, parameters, _dialogOptions);
+    await RefreshWindowGrid();
+  }
+
+  private void OnEditWindow(WindowDto window)
+  {
+    WindowId = window.Id.ToString();
+    _windowModel = new WindowCreateDto
+    {
+      Name = window.Name,
+      QuantityOfWindows = window.QuantityOfWindows
+    };
+  }
+
+  private void ResetForm()
+  {
+    _windowModel = new WindowCreateDto();
+    WindowId = string.Empty;
+  }
+
+  private async Task OnDeleteWindow(WindowDto window)
+  {
+    var dialogMessage = $"Are you sure you want to delete Window: {window.Name}?";
+    const string dialogTitle = "Delete Window Confirmation";
+
+    var isConfirmed = await DialogService.Confirm(dialogMessage, dialogTitle, new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+    if (isConfirmed == true)
+    {
+      await WindowService.DeleteWindowAsync(window.Id);
+      await RefreshWindowGrid();
+      ResetForm();
+    }
+  }
+
+  void ShowTooltip(ElementReference elementReference, string content)
+  {
+    TooltipService.Open(elementReference, content, new TooltipOptions { Position = TooltipPosition.Top });
+  }
+
+}

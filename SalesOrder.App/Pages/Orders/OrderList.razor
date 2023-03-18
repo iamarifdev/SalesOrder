@@ -1,0 +1,256 @@
+@page "/orders"
+@using SalesOrder.App.Services
+@using SalesOrder.Common.DTO.Element
+@using SalesOrder.Common.DTO.Order
+@using SalesOrder.Common.DTO.Window
+@using SalesOrder.Common.Models
+@using SalesOrder.App.Pages.Windows
+@using SalesOrder.App.Pages.SubElements
+@inject IOrderService OrderService
+@inject IWindowService WindowService
+@inject ISubElementService SubElementService
+@inject DialogService DialogService
+@inject TooltipService TooltipService
+
+<RadzenText class="rz-my-4" TextStyle="TextStyle.H6">Order List</RadzenText>
+
+<RadzenStack class="rz-my-2" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.End" Gap="1rem" Wrap="FlexWrap.Wrap">
+  <RadzenButton Click="@(_ => RefreshGrid())" Text="Refresh" Icon="refresh" ButtonStyle="ButtonStyle.Primary"/>
+  <RadzenButton Click="@(_ => OnAddNewOrder())" Text="Add New" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary"/>
+</RadzenStack>
+<RadzenDataGrid @ref="@_dataGrid" IsLoading="@_isLoading" Data="@_orders" Count="@_count"
+                LoadData="@LoadData" TItem="OrderDto" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Center"
+                AllowSorting="true" PageSizeOptions="@_pageSizeOptions" ShowPagingSummary="@_showPagerSummary"
+                PagingSummaryFormat="@_pagingSummaryFormat" AllGroupsExpanded="true" ExpandMode="DataGridExpandMode.Multiple">
+
+  <Template Context="order">
+    <RadzenCard Style="margin-bottom:20px">
+      Order name: <b>@order?.Name</b>
+    </RadzenCard>
+
+    @* Window Grid *@
+    <RadzenDataGrid AllowSorting="true" Data="@order.Windows" TItem="WindowDto">
+      <Template Context="window">
+        <RadzenCard Style="margin-bottom:20px">
+          Window name: <b>@window?.Name</b>
+        </RadzenCard>
+
+        @* SubElement Grid *@
+        <RadzenDataGrid AllowSorting="true" Data="@window.SubElements" TItem="SubElementDto">
+          <Columns>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="Id" Title="ID"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="Element" Title="Element"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="Type" Title="Type"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="Width" Title="Width"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="Height" Title="Height"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="CreatedAt" Title="Created At"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Property="UpdatedAt" Title="Updated At"/>
+            <RadzenDataGridColumn TItem="SubElementDto" Title="Action" Filterable="false" Sortable="false">
+              <Template Context="subElement">
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="edit" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => OnEditSubElement(order, window, subElement))" MouseEnter="@(args => ShowTooltip(args, "Edit Sub-element"))"/>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OnDeleteSubElement(subElement))" MouseEnter="@(args => ShowTooltip(args, "Delete Sub-element"))"/>
+              </Template>
+            </RadzenDataGridColumn>
+          </Columns>
+        </RadzenDataGrid>
+      </Template>
+
+      <Columns>
+        <RadzenDataGridColumn TItem="WindowDto" Property="Id" Title="Window ID"/>
+        <RadzenDataGridColumn TItem="WindowDto" Property="Name" Title="Name"/>
+        <RadzenDataGridColumn TItem="WindowDto" Property="QuantityOfWindows" Title="Quantity"/>
+        <RadzenDataGridColumn TItem="WindowDto" Property="TotalSubElements" Title="Total Sub-elements"/>
+        <RadzenDataGridColumn TItem="WindowDto" Property="CreatedAt" Title="Created At"/>
+        <RadzenDataGridColumn TItem="WindowDto" Property="UpdatedAt" Title="Updated At"/>
+
+        <RadzenDataGridColumn TItem="WindowDto" Title="Action" Filterable="false" Sortable="false">
+          <Template Context="window">
+            <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="add_circle_outline" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(_ => OnAddNewSubElement(order, window))" MouseEnter="@(args => ShowTooltip(args, "Add Sub Element"))"/>
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="edit" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => OnEditWindow(order, window))" MouseEnter="@(args => ShowTooltip(args, "Edit Window"))"/>
+            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OnDeleteWindow(window))" MouseEnter="@(args => ShowTooltip(args, "Delete Window"))"/>
+          </Template>
+        </RadzenDataGridColumn>
+      </Columns>
+    </RadzenDataGrid>
+  </Template>
+
+  <Columns>
+    <RadzenDataGridColumn TItem="OrderDto" Property="Id" Title="Order ID"/>
+    <RadzenDataGridColumn TItem="OrderDto" Property="Name" Title="Name"/>
+    <RadzenDataGridColumn TItem="OrderDto" Property="State" Title="State"/>
+    <RadzenDataGridColumn TItem="OrderDto" Property="CreatedAt" Title="Created At"/>
+    <RadzenDataGridColumn TItem="OrderDto" Property="UpdatedAt" Title="Updated At"/>
+    <RadzenDataGridColumn TItem="OrderDto" Title="Action" Filterable="false" Sortable="false">
+      <Template Context="order">
+        <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="add_circle_outline" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(_ => OnAddNewWindow(order))" MouseEnter="@(args => ShowTooltip(args, "Add Window"))"/>
+        <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="edit" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => OnEditOrder(order))" MouseEnter="@(args => ShowTooltip(args, "Edit Order"))"/>
+        <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => OnDeleteOrder(order))" MouseEnter="@(args => ShowTooltip(args, "Delete Order"))"/>
+      </Template>
+    </RadzenDataGridColumn>
+  </Columns>
+</RadzenDataGrid>
+
+@code {
+  private readonly string _pagingSummaryFormat = "Displaying page {0} of {1} (total {2} records)";
+  private readonly bool _showPagerSummary = true;
+
+  private RadzenDataGrid<OrderDto> _dataGrid;
+  private readonly IEnumerable<int> _pageSizeOptions = new[] { 10, 20, 30 };
+  private bool _isLoading;
+
+  private IEnumerable<OrderDto> _orders = new List<OrderDto>();
+  private int _count;
+
+  private readonly DialogOptions _orderDialogOptions = new() { Width = "900px", Height = "400px", Resizable = true, Draggable = true };
+  private readonly DialogOptions _dialogOptions = new() { Width = "900px", Height = "700px", Resizable = true, Draggable = true };
+  private readonly ConfirmOptions _confirmOptions = new() { OkButtonText = "Yes", CancelButtonText = "No" };
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+
+    var result = await OrderService.GetAllOrdersAsync(new PaginationQuery());
+    if (result != null)
+    {
+      _orders = result.Items;
+      _count = result.Count;
+    }
+  }
+
+  private async Task LoadData(LoadDataArgs args)
+  {
+    _isLoading = true;
+
+    var sort = args.Sorts.LastOrDefault();
+
+    var query = new PaginationQuery
+    {
+      Page = args.Skip != null && args.Top != null ? (int)args.Skip / (int)args.Top + 1 : 1,
+      PageSize = args.Top ?? 10,
+      SortField = sort?.Property ?? "CreatedAt",
+      SortOrder = sort?.SortOrder == SortOrder.Ascending ? "asc" : "desc"
+    };
+
+    var result = await OrderService.GetAllOrdersAsync(query);
+
+    _orders = result.Items;
+    _count = result.Count;
+
+    _isLoading = false;
+  }
+
+  private async Task RefreshGrid()
+  {
+    _dataGrid.Reset();
+    await _dataGrid.FirstPage(true);
+  }
+
+  private async Task OnAddNewWindow(OrderDto order)
+  {
+    var dialogTitle = $"Order name: {order.Name}";
+    var parameters = new Dictionary<string, object> { { "OrderID", order.Id.ToString() } };
+    var isClosed = await DialogService.OpenAsync<AddEditWindow>(dialogTitle, parameters, _dialogOptions);
+
+    if (isClosed == true)
+    {
+      await RefreshGrid();
+    }
+  }
+
+  private async Task OnEditWindow(OrderDto order, WindowDto window)
+  {
+    var parameters = new Dictionary<string, object> { { "OrderID", order.Id.ToString() }, { "WindowID", window.Id.ToString() } };
+    var isClosed = await DialogService.OpenAsync<AddEditWindow>($"Update Window: {window.Name}", parameters, _dialogOptions);
+
+    if (isClosed == true)
+    {
+      await RefreshGrid();
+    }
+  }
+
+  private async Task OnAddNewOrder()
+  {
+    await DialogService.OpenAsync<AddEditOrder>("Add New Order", null, _orderDialogOptions);
+
+    await RefreshGrid();
+  }
+
+  private async Task OnEditOrder(OrderDto order)
+  {
+    var parameters = new Dictionary<string, object> { { "OrderID", order.Id.ToString() } };
+    await DialogService.OpenAsync<AddEditOrder>($"Update Order: {order.Name}", parameters, _orderDialogOptions);
+
+    await RefreshGrid();
+  }
+
+  private async Task OnDeleteOrder(OrderDto order)
+  {
+    var dialogMessage = $"Are you sure you want to delete Order: {order.Name}?";
+    const string dialogTitle = "Delete Order Confirmation";
+
+    var isConfirmed = await DialogService.Confirm(dialogMessage, dialogTitle, _confirmOptions);
+    if (isConfirmed == true)
+    {
+      await OrderService.DeleteOrderAsync(order.Id);
+      await RefreshGrid();
+    }
+  }
+
+  private async Task OnAddNewSubElement(OrderDto order, WindowDto window)
+  {
+    var dialogTitle = $"Window name: {window.Name}";
+    var parameters = new Dictionary<string, object> { { "OrderID", order.Id.ToString() }, { "WindowID", window.Id.ToString() } };
+    await DialogService.OpenAsync<AddEditSubElement>(dialogTitle, parameters, _dialogOptions);
+
+    await RefreshGrid();
+  }
+
+  private async Task OnDeleteWindow(WindowDto window)
+  {
+    var dialogMessage = $"Are you sure you want to delete Window: {window.Name}?";
+    const string dialogTitle = "Delete Window Confirmation";
+
+    var isConfirmed = await DialogService.Confirm(dialogMessage, dialogTitle, _confirmOptions);
+    if (isConfirmed == true)
+    {
+      await WindowService.DeleteWindowAsync(window.Id);
+      await RefreshGrid();
+    }
+  }
+
+
+  private async Task OnEditSubElement(OrderDto order, WindowDto window, SubElementDto subElement)
+  {
+    var parameters = new Dictionary<string, object>
+    {
+      { "OrderID", order.Id.ToString() },
+      { "WindowID", window.Id.ToString() },
+      { "SubElementID", subElement.Id.ToString() }
+    };
+    var isClosed = await DialogService.OpenAsync<AddEditSubElement>("Update Sub-element", parameters, _dialogOptions);
+
+    if (isClosed == true)
+    {
+      await RefreshGrid();
+    }
+  }
+
+  private async Task OnDeleteSubElement(SubElementDto subElement)
+  {
+    const string dialogMessage = "Are you sure you want to delete the sub-element?";
+    const string dialogTitle = "Delete Sub-element Confirmation";
+
+    var isConfirmed = await DialogService.Confirm(dialogMessage, dialogTitle, _confirmOptions);
+    if (isConfirmed == true)
+    {
+      await SubElementService.DeleteSubElementAsync(subElement.Id);
+      await RefreshGrid();
+    }
+  }
+
+  void ShowTooltip(ElementReference elementReference, string content)
+  {
+    TooltipService.Open(elementReference, content, new TooltipOptions { Position = TooltipPosition.Top });
+  }
+
+}

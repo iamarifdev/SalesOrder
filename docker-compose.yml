@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: SalesOrder.API/Dockerfile
+    image: "arifjmamun/sales_order_api"
+    container_name: "sales_order_api"
+    ports:
+      - "5210:5210"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development # debug runs in development mode
+      - ASPNETCORE_URLS=http://+:5210
+    volumes:
+      - ./SalesOrder.API/SalesOrder.db:/app/Data/SalesOrder.db
+    networks:
+      - sales_order_net
+
+  app:
+    build:
+      context: .
+      dockerfile: SalesOrder.App/Dockerfile
+    image: "arifjmamun/sales_order_app"
+    container_name: "sales_order_app"
+    ports:
+      - "5555:80"
+    networks:
+      - sales_order_net
+
+networks:
+  sales_order_net:
