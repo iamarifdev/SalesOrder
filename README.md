@@ -23,6 +23,29 @@ http://localhost:5555
 http://localhost:5210/swagger/index.html
 ```
 
+## Without Docker
+#### To run the application from solution directory
+
+###### API
+```bash
+cd SalesOrder.API
+dotnet run
+```
+###### Web App
+```bash
+cd SalesOrder.App
+dotnet run
+```
+
+### To navigate and run the Web App in browser
+```bash
+http://localhost:5154
+```
+##### Swagger UI is available at
+```bash
+http://localhost:5210/swagger/index.html
+```
+
 ## Migration
 #### To add migration, run from solution directory
 ```bash
