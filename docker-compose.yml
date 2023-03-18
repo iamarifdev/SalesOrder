@@ -23,8 +23,12 @@ services:
       dockerfile: SalesOrder.App/Dockerfile
     image: "arifjmamun/sales_order_app"
     container_name: "sales_order_app"
+    depends_on:
+      - api
     ports:
       - "5555:80"
+    environment:
+      - PORT=5555
     networks:
       - sales_order_net
 

@@ -14,3 +14,5 @@ FROM nginx:alpine AS final
 WORKDIR /usr/share/nginx/html
 COPY --from=publish /app/publish/wwwroot .
 COPY SalesOrder.App/nginx.conf /etc/nginx/nginx.conf
+
+ENTRYPOINT echo "Web App running at: http://localhost:${PORT}" && nginx -g "daemon off;"
