@@ -52,7 +52,6 @@ app.Run();
 
 void MigrateDatabase()
 {
-    Console.WriteLine($"-------------Environment: {app.Environment.EnvironmentName}");
     if (app.Environment.IsEnvironment("Test")) return;
     
     using var serviceScope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope();
