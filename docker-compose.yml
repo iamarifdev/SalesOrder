@@ -12,8 +12,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development # debug runs in development mode
       - ASPNETCORE_URLS=http://+:5210
+      - ASPNETCORE_ConnectionStrings__ApplicationDbContext=Data Source=/app/Data/SalesOrder.db
     volumes:
-      - ./SalesOrder.API/SalesOrder.db:/app/Data/SalesOrder.db
+      - salesorder-db-data:/app/Data
     networks:
       - sales_order_net
 
@@ -31,6 +32,9 @@ services:
       - PORT=5555
     networks:
       - sales_order_net
+
+volumes:
+  salesorder-db-data:
 
 networks:
   sales_order_net:
